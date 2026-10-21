@@ -16,7 +16,7 @@ CLASS_NAME_TO_COLOR = dict(zip(CLASS_NAMES, CLASS_COLORS))
 CLASS_NAME_TO_INDEX = dict(zip(CLASS_NAMES, range(len(CLASS_NAMES))))
 
 # Path extraction
-root_path = "/user/rcoelhopae2025/AUVE_LAB_CODES/Lab_1_2_3/scenario1"
+root_path = "/user/rcoelhopae2025/AUVE_LAB_CODES/scenario1"
 
 scenario = "Town01_type001_subtype0001_scenario00003"  
 

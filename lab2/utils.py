@@ -8,7 +8,7 @@ import pickle
 import glob
 import matplotlib.pyplot as plt
 
-from geometry import make_tf, apply_tf
+from geometry import make_tf, apply_tf, rot_z
 
 # ---------------------------------------------
 # ---------------------------------------------
@@ -22,7 +22,7 @@ CLASS_NAME_TO_COLOR = dict(zip(CLASS_NAMES, CLASS_COLORS))
 CLASS_NAME_TO_INDEX = dict(zip(CLASS_NAMES, range(len(CLASS_NAMES))))
 
 # Path extraction
-root_path = "/user/rcoelhopae2025/AUVE_LAB_CODES/Lab_1_2_3/scenario1"
+root_path = "/user/rcoelhopae2025/AUVE_LAB_CODES/scenario1"
 
 scenario = "Town01_type001_subtype0001_scenario00003"  
 
@@ -91,14 +91,20 @@ def get_available_point_clouds(n_frame, actors):
     This function is used to get all point clouds available in ego frame
     '''
     ego_to_world = get_actor_T_world(actors[0], n_frame) # the transformation from ego frame to world frame
+    world_to_ego = np.linalg.inv(ego_to_world) # inv transf
     merged_pc = get_point_cloud(n_frame, actors[0]) #in ego frame
 
     # TODO: retrieve point clouds in actor frame for all actors and merge them into one point cloud in ego frame
     for actor in actors[1:]:
-        pc = get_point_cloud(n_frame,actor)
-        pass 
+        pc = get_point_cloud(n_frame,actor) # this is already in actor frame
         # TODO: map `lidar_data_actor` from actor frame to ego frame
-        
+        actor_T_world = get_actor_T_world(actor,n_frame)
+        # pc_in_ego_frame = tf_w_to_e * tf_a_to_w * pc_in_actor_frame
+        # the order is right to left, so first tf to w and then to ego
+        pc = apply_tf(actor_T_world,pc)
+        pc = apply_tf(world_to_ego,pc)
+        merged_pc = np.concatenate((merged_pc,pc))
+    
     return merged_pc
 
 def get_boxes_in_sensor_frame(n_frame, actor):
@@ -149,9 +155,23 @@ def get_available_boxes_in_ego_frame(n_frame, actors):
     boxes = get_boxes_in_actor_frame(n_frame, actors[0]) #in ego frame
     boxes = np.array(boxes).reshape(-1,8)
     ego_to_world = get_actor_T_world(actors[0], n_frame)
+    yaw_ego_to_world = -np.arctan2(ego_to_world[1][0],ego_to_world[0][0])
+    
+    world_to_ego = np.linalg.inv(ego_to_world) # inv transf
     available_boxes_in_world_frame = boxes
 
     # TODO : retrieve boxes in actor frame for all actors
+    for actor in actors[1:]:
+        box_in_actor = get_boxes_in_actor_frame(n_frame, actor)
+        tf_actor_to_world = get_actor_T_world(actor, n_frame)
+        yaw_actor_to_world = np.arctan2(tf_actor_to_world[1][0],tf_actor_to_world[0][0])
+        box_in_world = apply_tf(tf_actor_to_world,box_in_actor)
+
+        box_in_ego = apply_tf(world_to_ego,box_in_world)
+        box_in_ego = np.concatenate((box_in_ego[:],box_in_actor[:,3:]),axis=1)
+        box_in_ego[:,6] += yaw_ego_to_world + yaw_actor_to_world
+        
+        boxes = np.concatenate((boxes,box_in_ego))
 
     return boxes
 
