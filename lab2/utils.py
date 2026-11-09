@@ -165,6 +165,7 @@ def get_available_boxes_in_ego_frame(n_frame, actors):
         box_in_actor = get_boxes_in_actor_frame(n_frame, actor)
         tf_actor_to_world = get_actor_T_world(actor, n_frame)
         yaw_actor_to_world = np.arctan2(tf_actor_to_world[1][0],tf_actor_to_world[0][0])
+        
         box_in_world = apply_tf(tf_actor_to_world,box_in_actor)
 
         box_in_ego = apply_tf(world_to_ego,box_in_world)
@@ -184,8 +185,20 @@ def filter_points(points: np.ndarray, range: np.ndarray):
     This function is used to filter points within the range
     '''
     # TODO: filter points within the range
-    
-    filtered_points = points # this is just a dummy value
+    filtered_points = []
+
+    xmin = range[0]
+    ymin = range[1]
+    zmin = range[2]
+    xmax = range[3]
+    ymax = range[4]
+    zmax = range[5]
+
+    for i in points:
+        if i[0] >= xmin and i[0] <= xmax:
+            if i[1] >= ymin and i[1] <= ymax:
+                if i[2] >= ymin and i[2] <= zmax:
+                    filtered_points.append(i)
 
     return filtered_points
 
